@@ -1,0 +1,23 @@
+Wochenbericht LaTeX-Template
+============================
+
+LaTeX Vorlage zum Erstellen von Wochenberichten inklusive Hilfsskript.
+
+Abhängigkeiten
+--------------
+Folgende Programme werden zum Ausführen des Helferskripts benötigt:
+
+- dialog
+- pdflatex
+- vipe (in moreutils enthalten)
+
+Anwendung
+---------
+Das Helferskript kann durch folgenden Befehl aufgerufen werden:
+
+	bash {Pfad zum Skript}/wochenbericht.sh
+
+Nach der Abfrage der grundlegenden Daten öffnet sich der Standardeditor um
+die Inhalte der einzelnen Rubriken einzutragen.
+
+(Vipe nutzt dazu die $EDITOR Umgebungsvariable)
