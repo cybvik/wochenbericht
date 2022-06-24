@@ -15,6 +15,10 @@ user_data="$script_dir/user.csv"
 
 ### FUNCTIONS
 
+check_dir() {
+	[ -d "$1" ] || mkdir -p "$1"
+}
+
 read_data() {
   while IFS=, read -r key value; do
     case "$key" in
@@ -103,6 +107,9 @@ post_compile() {
 ### SCRIPT
 
 dialog --msgbox "Willkommen im Wochenberichtsskript!" 0 0 --output-fd 1 || { clear; echo "Error! You need dialog to run this script!"; exit 1; }
+
+check_dir "$tex_dir"
+check_dir "$out_dir"
 
 [ -f "$user_data" ] && read_data || get_data
 get_department
