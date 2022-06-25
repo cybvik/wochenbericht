@@ -1,6 +1,3 @@
 clean.sh
 *.aux
 *.log
-*.pdf
-tex/history
-tex/history/*
