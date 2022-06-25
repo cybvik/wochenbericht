@@ -1,3 +1,5 @@
 clean.sh
 *.aux
 *.log
+tex/history
+out/*
