@@ -116,8 +116,10 @@ get_department
 get_date_range "$cal_week" "$cal_year"
 while true; do
   get_confirmation
-  [ "$response" == 0 ] && break || { get_data; get_department; get_date_range; }
-  write_data
+  [ "$response" == 0 ] && break 
+  get_data
+  get_department
+  get_date_range "$cal_week" "$cal_year"
 done
 write_data
 prep_template
