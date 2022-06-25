@@ -52,23 +52,18 @@ write_data() {
 }
 
 get_date_range() {
-  local week=$1 year=$2
-  local week_num_of_Jan_1 week_day_of_Jan_1
   local first_Mon
   local date_fmt="+%d.%m.%Y"
   local mon sun
 
-  week_num_of_Jan_1=$(date -d $year-01-01 +%W)
-  week_day_of_Jan_1=$(date -d $year-01-01 +%u)
-
-  if ((week_num_of_Jan_1)); then
-    first_Mon=$year-01-01
+  if (($(date -d $cal_year-01-01 +%W))); then
+    first_Mon=$cal_year-01-01
   else
-    first_Mon=$year-01-$((01 + (7 - week_day_of_Jan_1 + 1) ))
+    first_Mon=$cal_year-01-$((01 + (7 - $(date -d $cal_year-01-01 +%u) + 1) ))
   fi
 
-  mon=$(date -d "$first_Mon +$((week - 1)) week" "$date_fmt")
-  sun=$(date -d "$first_Mon +$((week - 1)) week + 6 day" "$date_fmt")
+  mon=$(date -d "$first_Mon +$(($cal_week - 1)) week" "$date_fmt")
+  sun=$(date -d "$first_Mon +$(($cal_week - 1)) week + 6 day" "$date_fmt")
   date_range="$mon - $sun"
 }
 
