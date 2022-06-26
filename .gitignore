@@ -3,3 +3,4 @@ clean.sh
 *.log
 tex/history
 out/*
+user.csv
