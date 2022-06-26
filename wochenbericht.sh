@@ -16,7 +16,7 @@ user_data="$script_dir/user.csv"
 ### FUNCTIONS
 
 check_dir() {
-	[ -d "$1" ] || mkdir -p "$1"
+  [ -d "$1" ] || mkdir -p "$1"
 }
 
 read_data() {
