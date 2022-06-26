@@ -42,15 +42,6 @@ get_department() {
   department="$(dialog --inputbox "Abteilung:" 0 0 --output-fd 1)"
 }
 
-get_confirmation() {
-  dialog --yesno  "Name: $name\nAusbildungsjahr: $train_year\nKalenderwoche: $cal_week\nKalenderjahr: $cal_year\nAbteilung: $department\nWoche: $date_range\n\n Sind die Angaben korrekt?" 0 0 --output-fd 1
-  response=$?
-}
-
-write_data() {
-  echo -e "NAME,$name\nTRAIN_YEAR,$train_year\nCAL_YEAR,$cal_year\nCAL_WEEK,$cal_week" > "$user_data"
-}
-
 get_date_range() {
   local first_Mon
   local date_fmt="+%d.%m.%Y"
@@ -67,7 +58,32 @@ get_date_range() {
   date_range="$mon - $sun"
 }
 
-prep_template() {
+vipe_cmd() {
+  echo "$1 (DIESE ZEILE LÖSCHEN!)" | vipe > "$current_tex/$2.tex"
+}
+
+### SCRIPT
+dialog --msgbox "Willkommen im Wochenberichtsskript!" 0 0 --output-fd 1 || { clear; echo "Error! You need dialog to run this script!"; exit 1; }
+
+check_dir "$tex_dir"
+check_dir "$out_dir"
+
+while true; do
+  [ -f "$user_data" ] && read_data || get_data
+  get_department
+  get_date_range "$cal_week" "$cal_year"
+
+  while true; do
+    dialog --yesno  "Name: $name\nAusbildungsjahr: $train_year\nKalenderwoche: $cal_week\nKalenderjahr: $cal_year\nAbteilung: $department\nWoche: $date_range\n\n Sind die Angaben korrekt?" 0 0 --output-fd 1
+    case "$?" in
+      '0' ) break ;;
+      '1' ) get_data; get_department; get_date_range ;;
+      * ) clear; exit 1 ;;
+    esac
+  done
+
+  echo -e "NAME,$name\nTRAIN_YEAR,$train_year\nCAL_YEAR,$cal_year\nCAL_WEEK,$cal_week" > "$user_data"
+
   current_tex="$tex_dir/history/$cal_year/$cal_week"
   mkdir -p "$current_tex" || { clear; echo "Error! Could not create directory for .tex files"; exit 1 ;}
   cp "$tex_dir/template/wochenbericht.tex" "$current_tex/wochenbericht.tex"
@@ -75,19 +91,15 @@ prep_template() {
   sed -i "s/WOCHE/$date_range/" "$current_tex/wochenbericht.tex"
   sed -i "s/AUSBILDUNGSJAHR/$train_year/" "$current_tex/wochenbericht.tex"
   sed -i "s/ABTEILUNG/$department/" "$current_tex/wochenbericht.tex"
-}
 
-vipe_cmd() {
-  echo "$1 (DIESE ZEILE LÖSCHEN!)" | vipe > "$current_tex/$2.tex"
-}
+  vipe_cmd "Betriebliche Tätigkeiten" betrieb
+  vipe_cmd "Außeretriebliche Tätigkeiten" extern
+  vipe_cmd "Berufsschule" schule
 
-compile() {
   cd "$current_tex"
   pdflatex --output-directory "$out_dir" --jobname "$cal_year-$cal_week" "wochenbericht.tex"
   rm "$out_dir"/*.aux "$out_dir"/*.log
-}
 
-post_compile() {
   if [ "$cal_week" == 52 ]; then
     cal_week="1"
     ((cal_year=cal_year+1))
@@ -97,29 +109,12 @@ post_compile() {
     ((cal_week=cal_week+1))
     sed -i "s/CAL_WEEK.*/CAL_WEEK,$cal_week/" "$user_data"
   fi
-}
 
-### SCRIPT
-
-dialog --msgbox "Willkommen im Wochenberichtsskript!" 0 0 --output-fd 1 || { clear; echo "Error! You need dialog to run this script!"; exit 1; }
-
-check_dir "$tex_dir"
-check_dir "$out_dir"
-
-[ -f "$user_data" ] && read_data || get_data
-get_department
-get_date_range "$cal_week" "$cal_year"
-while true; do
-  get_confirmation
-  [ "$response" == 0 ] && break 
-  get_data
-  get_department
-  get_date_range "$cal_week" "$cal_year"
+  dialog --yesno "Noch einen Bericht erstellen?" 0 0 --output-fd 1
+  case "$?" in
+    '0' ) break ;;
+    '1' ) clear; exit 1 ;;
+    * ) clear; exit 1 ;;
+  esac
 done
-write_data
-prep_template
-vipe_cmd "Betriebliche Tätigkeiten" betrieb
-vipe_cmd "Außeretriebliche Tätigkeiten" extern
-vipe_cmd "Berufsschule" schule
-compile
-post_compile
+
