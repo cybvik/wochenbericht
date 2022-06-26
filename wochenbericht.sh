@@ -7,19 +7,18 @@
 # \____| |_| |____/  \_/  |___|_|\_\  
 
 ### VARIABLES
-
+# Determine the locations the script needs to know
 script_dir="$(dirname $(realpath $0))"
 tex_dir="$script_dir/tex"
 out_dir="$script_dir/out"
 user_data="$script_dir/user.csv"
 
 ### FUNCTIONS
-
-check_dir() {
+check_dir() { # Check if a directory exist and create it if not
   [ -d "$1" ] || mkdir -p "$1"
 }
 
-read_data() {
+read_data() { # Get the values from user.csv
   while IFS=, read -r key value; do
     case "$key" in
       "NAME") name="$value" ;;
@@ -31,18 +30,18 @@ read_data() {
   done < "$user_data"
 }
 
-get_data() {
+get_data() { # Get data via user input
   name="$(dialog --inputbox "Name des Auszubildenden:" 0 0 --output-fd 1)"
   train_year="$(dialog --inputbox "Ausbildungsjahr:" 0 0 --output-fd 1)"
   cal_year="$(dialog --inputbox "Kalenderjahr des Berichts:" 0 0 --output-fd 1)"
   cal_week="$(dialog --inputbox "Kalenderwoche des Berichts:" 0 0 --output-fd 1)"
 }
 
-get_department() {
+get_department() { # Department gets an extra function because it is not saved in user.csv
   department="$(dialog --inputbox "Abteilung:" 0 0 --output-fd 1)"
 }
 
-get_date_range() {
+get_date_range() { # Function that determines the first and last day of the chosen week
   local first_Mon
   local date_fmt="+%d.%m.%Y"
   local mon sun
@@ -58,7 +57,7 @@ get_date_range() {
   date_range="$mon - $sun"
 }
 
-vipe_cmd() {
+vipe_cmd() { # Helper function to call vipe
   echo "$1 (DIESE ZEILE LÖSCHEN!)" | vipe > "$current_tex/$2.tex"
 }
 
@@ -73,6 +72,7 @@ while true; do
   get_department
   get_date_range "$cal_week" "$cal_year"
 
+  # Let user validate inputs, let him redo the inputs if something is wrong
   while true; do
     dialog --yesno  "Name: $name\nAusbildungsjahr: $train_year\nKalenderwoche: $cal_week\nKalenderjahr: $cal_year\nAbteilung: $department\nWoche: $date_range\n\n Sind die Angaben korrekt?" 0 0 --output-fd 1
     case "$?" in
@@ -82,8 +82,10 @@ while true; do
     esac
   done
 
+  # Write the current data to user.csv
   echo -e "NAME,$name\nTRAIN_YEAR,$train_year\nCAL_YEAR,$cal_year\nCAL_WEEK,$cal_week" > "$user_data"
 
+  # Copy template and insert data into copied file
   current_tex="$tex_dir/history/$cal_year/$cal_week"
   mkdir -p "$current_tex" || { clear; echo "Error! Could not create directory for .tex files"; exit 1 ;}
   cp "$tex_dir/template/wochenbericht.tex" "$current_tex/wochenbericht.tex"
@@ -92,14 +94,17 @@ while true; do
   sed -i "s/AUSBILDUNGSJAHR/$train_year/" "$current_tex/wochenbericht.tex"
   sed -i "s/ABTEILUNG/$department/" "$current_tex/wochenbericht.tex"
 
+  # Use vipe to let user enter their report text
   vipe_cmd "Betriebliche Tätigkeiten" betrieb
   vipe_cmd "Außeretriebliche Tätigkeiten" extern
   vipe_cmd "Berufsschule" schule
 
+  # Compile via pdflatex, remove *.log and *.aux files
   cd "$current_tex"
   pdflatex --output-directory "$out_dir" --jobname "$cal_year-$cal_week" "wochenbericht.tex"
   rm "$out_dir"/*.aux "$out_dir"/*.log
 
+  # Increment cal_week and check if it was the last week of the year
   if [ "$cal_week" == 52 ]; then
     cal_week="1"
     ((cal_year=cal_year+1))
@@ -110,6 +115,7 @@ while true; do
     sed -i "s/CAL_WEEK.*/CAL_WEEK,$cal_week/" "$user_data"
   fi
 
+  # Ask user if he wants to create the next report as well
   dialog --yesno "Noch einen Bericht erstellen?" 0 0 --output-fd 1
   case "$?" in
     '0' ) break ;;
