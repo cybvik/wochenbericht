@@ -14,9 +14,6 @@ out_dir="$script_dir/out"
 user_data="$script_dir/user.csv"
 
 ### FUNCTIONS
-check_dir() { # Check if a directory exist and create it if not
-  [ -d "$1" ] || mkdir -p "$1"
-}
 
 read_data() { # Get the values from user.csv
   while IFS=, read -r key value; do
@@ -64,8 +61,9 @@ vipe_cmd() { # Helper function to call vipe
 ### SCRIPT
 dialog --msgbox "Willkommen im Wochenberichtsskript!" 0 0 --output-fd 1 || { clear; echo "Error! You need dialog to run this script!"; exit 1; }
 
-check_dir "$tex_dir"
-check_dir "$out_dir"
+for i in "$tex_dir" "$out_dir"; do
+  [ -d "$i" ] || mkdir -p "$i"
+done
 
 while true; do
   [ -f "$user_data" ] && read_data || get_data
